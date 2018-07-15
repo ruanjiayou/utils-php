@@ -1,16 +1,30 @@
 <?php
-/**
- * php版参数校验类
- * 作者: 阮家友
- * 时间: 2018-7-10 01:28:10
- * 联系: 1439120442@qq.com
- *  git: https://github.com/ruanjiayou
- */
+  error_reporting(E_ALL^E_NOTICE);
+  /**
+   * php版参数校验类
+   * 作者: 阮家友
+   * 时间: 2018-7-10 01:28:10
+   * 联系: 1439120442@qq.com
+   *  git: https://github.com/ruanjiayou
+   */
+  class Hinter extends Exception {
+    public $info;
+    public function setHinter($o) {
+      $this->info = array(
+        'status' => 1,
+        'data' => null,
+        'error' => $o['message'],
+        'stack' => $o
+      );
+    }
+  }
+
+  // 修改默认的异常处理器
+  //set_exception_handler("Hinter");
+
   $messages = array(
     'zh-cn' => array(
-      'required'=> '{{field}} 字段不能为{{value}}!',
-      'url'=> '{{field}} 字段的值 {{data}} 不是有效的url!',
-      'email'=> '{{field}} 字段的值 {{data}} 不是有效的邮件格式!',
+      'required'=> '{{field}} 字段不能为空!',
       'date'=> '{{field}} 字段的值 {{data}} 不是有效的 日期时间 格式!',
       'dateonly'=> '{{field}} 字段的值 {{data}} 不是有效的日期格式!',
       'timeonly'=> '{{field}} 字段的值 {{data}} 不是有效的时间格式!',
@@ -31,8 +45,8 @@
     )
   );
   class Validater {
-    static public $types = ['required', 'nullable', 'empty', 'nozero', 'minlength', 'maxlength', 'length', 'min', 'max', 'methods', 'array', 'char', 'string', 'enum', 'int', 'float', 'file', 'boolean', 'date', 'dateonly', 'timeonly', 'email', 'url', 'IDCard', 'creditCard'];
-    static public $atoms = ['methods', 'array', 'char', 'string', 'enum', 'int', 'float', 'file', 'boolean', 'date', 'dateonly', 'timeonly', 'email', 'url', 'IDCard', 'creditCard'];
+    static public $types = ['required', 'nullable', 'empty', 'nozero', 'minlength', 'maxlength', 'length', 'min', 'max', 'methods', 'array', 'char', 'string', 'enum', 'int', 'float', 'file', 'boolean', 'date', 'dateonly', 'timeonly'];
+    static public $atoms = ['methods', 'array', 'char', 'string', 'enum', 'int', 'float', 'file', 'boolean', 'date', 'dateonly', 'timeonly'];
     static public $bools = [1, '1', true, 'TRUE'];
     public $lang;
     public $methods;
@@ -41,12 +55,8 @@
      * 
      */
     function __construct($rules = array(), $methods = array(), $lang = 'zh-cn') {
-      if(!is_null($lang)) {
-        $this->lang = $lang;
-      }
-      if(!is_null($methods)) {
-        $this->methods = $methods;
-      }
+      $this->lang = $lang;
+      $this->methods = $methods;
       $this->rules = $this->parse($rules);
     }
     /**
@@ -73,7 +83,7 @@
       $keys = $arr[1];
       for($i=0;$i<count($raws);$i++){
         $key = $keys[$i];
-        $value = isset($data[$key]) ? $data[$key] : ' ?? ';
+        $value = $data[$key] ? $data[$key] : ' ?? ';
         $res = str_replace($raws[$i], $value, $res);
       }
       return $res;
@@ -84,8 +94,13 @@
      */
     function error($o) {
       global $messages;
-      $o['message'] = $this->compile($messages[$this->lang][$o['rule']], $o);
-      throw new Exception(json_encode($o, JSON_FORCE_OBJECT));
+      if(!is_string($o) && isset($o['message'])) {
+        $o['message'] = $this->compile($messages[$this->lang][$o['rule']], $o);
+      }
+      $hinter = new Hinter();
+var_dump($o);
+      $hinter->setHinter($o);
+      throw $hinter;
     }
     /**
      * 过滤并验证参数(使filter()和check()两个函数的串联)
@@ -101,9 +116,9 @@
     function filter($data) {
       $res = array();
       foreach($data as $k => $v) {
-        if(isset($this->rules[$k])) {
+        if($this->rules[$k]) {
             $rule = $this->rules[$k];
-            if(isset($rule['boolean']) && $rule[$k]['boolean'] == true) {
+            if($rule['boolean'] && $rule[$k]['boolean'] == true) {
               $res[$k] = in_array($data[$k], self::$bools) ? true : false;
             } else {
               $res[$k] = $data[$k];
@@ -137,7 +152,7 @@
           $rule['methods'] = array();
           $methods = $this->_str2arr($v);
           foreach($methods as $method) {
-            if(isset($this->methods[$method])) {
+            if($this->methods[$method]) {
               $rule['methods'][$method] = $this->methods[$method];
             }
           }
@@ -188,33 +203,33 @@
     function check($data) {
       foreach($this->rules as $k => $rule) {
         $v = $data[$k];
-        $err = array('field'=>$k, 'data'=>$v, 'rule'=>'', 'value'=>'');
+        $err = array('field'=>$k, 'data'=>$v, 'rule'=>'', 'value'=>'', 'message'=>'');
         // undefined null '' 的处理:required处理undefined;nullable处理null;empty 处理 空字符串
         if(null == $v && $rule['nullable'] || $v == '' && $rule['empty']) {
           continue;
         }
-        if(isset($rule['nonzero']) && ($v == 0 || $v == '0')) {
+        if($rule['nonzero'] && ($v == 0 || $v == '0')) {
           $err['rule'] = 'nonzero';
-          $this->error(err);
+          $this->error($err);
         }
         if(null == $v || '' == $v) {
-          if(isset($rule['required'])) {
+          if($rule['required']) {
             $err['rule'] = 'required';
             $err['value'] = $v;
-            $this->error(err);
+            $this->error($err);
           } else {
             unset($data[$k]);
             continue;
           }
         }
-        if(isset($rule['int'])) {
+        if($rule['int']) {
           if(!is_numeric($v)) {
             $err['rule'] = 'int';
-            $this->error(err);
+            $this->error($err);
           }
           $v = intval($v);
         }
-        if(isset($rule['float'])) {
+        if($rule['float']) {
           $regstr = '/^([0-9]+)(.([0-9]+))?$/';
           preg_match($regstr, $v, $mn);
           if(!is_numeric($v) || count($mn) == 0) {
@@ -243,35 +258,35 @@
           $err['rule'] = 'max';
           $this->error($err);
         }
-        if(isset($rule['array']) && is_array($rule['array']) && !is_array($v)) {
+        if($rule['array'] && is_array($rule['array']) && !is_array($v)) {
           $err['rule'] = 'array';
           $this->error($err);
         }
-        if(is_string($v) && isset($rule['minlength']) && strlen($v) < $rule['minlength']) {
+        if(is_string($v) && $rule['minlength'] && strlen($v) < $rule['minlength']) {
           $err['rule'] = 'minlength';
           $err['value'] = $rule['minlength'];
           $this->error($err);
         }
-        if(is_string($v) && isset($rule['maxlength']) && strlen($v) > $rule['maxlength']) {
+        if(is_string($v) && $rule['maxlength'] && strlen($v) > $rule['maxlength']) {
           $err['rule'] = 'maxlength';
           $err['value'] = $rule['maxlength'];
           $this->error($err);
         }
-        if(is_string($v) && isset($rule['length']) && strlen($v) != $rule['length']) {
+        if(is_string($v) && $rule['length'] && strlen($v) != $rule['length']) {
           $err['rule'] = 'length';
           $err['value'] = $rule['length'];
           $this->error($err);
         }
-        if(isset($rule['enum']) && !in_array($v, $rule['enum'])) {
+        if($rule['enum'] && !in_array($v, $rule['enum'])) {
           $err['rule'] = 'enum';
           $err['value'] = implode(',', $rule['enum']);
         }
-        if(isset($rule['boolean'])) {
+        if($rule['boolean']) {
           $v = in_array($v, self::$bools) ? true : false;
         }
         //TODO: 日期验证
         $data[$k] = $v;
-        if(isset($rule['methods'])) {
+        if($rule['methods']) {
           foreach($rule['methods'] as $f => $fn) {
             $res = $fn($v);
             if(!$res) {

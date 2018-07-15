@@ -24,7 +24,7 @@
         'mark' => '?'
     ));
     var_dump($input1);
-    $input2 = $validation->check(array(
+    $input2 = $validation->validate(array(
         'name' => 'ruanjiayou',
         'age' => '18',
         'money' => '18.963',
