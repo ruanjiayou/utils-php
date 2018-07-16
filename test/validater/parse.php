@@ -1,5 +1,5 @@
 <?php
-  include('../validater.php');
+  include('../../utils/validater.php');
   $validation = new Validater(array(
     'name' => 'required|string|minlength:6|maxlength:18',
     'age' => 'required|int|min:0|max:100',

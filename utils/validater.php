@@ -24,6 +24,7 @@
 
   $messages = array(
     'zh-cn' => array(
+      'atom'=>'验证语法中必须要有基本类型!',
       'required'=> '{{field}} 字段不能为空!',
       'date'=> '{{field}} 字段的值 {{data}} 不是有效的 日期时间 格式!',
       'dateonly'=> '{{field}} 字段的值 {{data}} 不是有效的日期格式!',
@@ -45,8 +46,8 @@
     )
   );
   class Validater {
-    static public $types = ['required', 'nullable', 'empty', 'nozero', 'minlength', 'maxlength', 'length', 'min', 'max', 'methods', 'array', 'char', 'string', 'enum', 'int', 'float', 'file', 'boolean', 'date', 'dateonly', 'timeonly'];
-    static public $atoms = ['methods', 'array', 'char', 'string', 'enum', 'int', 'float', 'file', 'boolean', 'date', 'dateonly', 'timeonly'];
+    static public $types = ['required', 'nullable', 'empty', 'nozero', 'default', 'alias', 'minlength', 'maxlength', 'length', 'min', 'max', 'methods', 'array', 'char', 'string', 'text', 'enum', 'int', 'float', 'file', 'boolean', 'date', 'dateonly', 'timeonly'];
+    static public $atoms = ['methods', 'array', 'char', 'string', 'text', 'enum', 'int', 'float', 'file', 'boolean', 'date', 'dateonly', 'timeonly'];
     static public $bools = [1, '1', true, 'TRUE'];
     public $lang;
     public $methods;
@@ -98,7 +99,6 @@
         $o['message'] = $this->compile($messages[$this->lang][$o['rule']], $o);
       }
       $hinter = new Hinter();
-var_dump($o);
       $hinter->setHinter($o);
       throw $hinter;
     }
@@ -175,12 +175,36 @@ var_dump($o);
           $rule['length'] = intval($v);
         } else if('enum' == $k) {
           $rule['enum'] = $this->_str2arr($v);
+        } else if('default' == $k) {
+          $rule['default'] = ['type'=>'value', 'value'=>''];
+          switch($v) {
+            case '0': $rule['default']['value'] = 0;break;
+            case '1': $rule['default']['value'] = 1;break;
+            case 'true': $rule['default']['value'] = true;break;
+            case 'false': $rule['default']['value'] = false;break;
+            case 'null': $rule['default']['value'] = null;break;
+            case 'timestamp': $rule['default']['value'] = TIMESTAMP;break;
+            //case 'datetime': break;
+            default:
+              preg_match('/^([\'\"\(])(.*)(\1|\))$/',$v, $match);
+              if(4 == count($match)) {
+                if($match[1] == '(') {
+                  $rule['default']['type'] = 'function';
+                }
+                $rule['default']['value'] = $match[2];
+              } else {
+                unset($rule['default']);
+              }
+            break;
+          }
+        } else if('alias' == $k) {
+          $rule['alias'] = $v;
         } else {
           $rule[$k] = true;
         }
       }
       if($hasAtom == false) {
-        $this->error('验证语法中必须要有基本类型!');
+        $this->error(['rule'=>'atom', 'message'=>'']);
       }
       return $rule;
     }
@@ -196,12 +220,15 @@ var_dump($o);
       return $res;
     }
     /**
-     * 校验字段
+     * 校验字段(default最强,function类型是后置的;能传null必须声明nullable,能传空'',必须声明empty,不能传0必须声明nonzero)
      * @param {object} $data 数据
      * @returns {object} 处理后的数据
      */
     function check($data) {
       foreach($this->rules as $k => $rule) {
+        if(!isset($data[$k]) && isset($rule['default']) && 'value' == $rule['default']['type']) {
+          $data[$k] = $rule['default']['value'];
+        }
         $v = $data[$k];
         $err = array('field'=>$k, 'data'=>$v, 'rule'=>'', 'value'=>'', 'message'=>'');
         // undefined null '' 的处理:required处理undefined;nullable处理null;empty 处理 空字符串
@@ -262,20 +289,23 @@ var_dump($o);
           $err['rule'] = 'array';
           $this->error($err);
         }
-        if(is_string($v) && $rule['minlength'] && strlen($v) < $rule['minlength']) {
-          $err['rule'] = 'minlength';
-          $err['value'] = $rule['minlength'];
-          $this->error($err);
-        }
-        if(is_string($v) && $rule['maxlength'] && strlen($v) > $rule['maxlength']) {
-          $err['rule'] = 'maxlength';
-          $err['value'] = $rule['maxlength'];
-          $this->error($err);
-        }
-        if(is_string($v) && $rule['length'] && strlen($v) != $rule['length']) {
-          $err['rule'] = 'length';
-          $err['value'] = $rule['length'];
-          $this->error($err);
+        if(is_string($v) || is_array($v)) {
+          $len = is_string($v) ? strlen($v) : count($v);
+          if($rule['minlength'] && $len < $rule['minlength']) {
+            $err['rule'] = 'minlength';
+            $err['value'] = $rule['minlength'];
+            $this->error($err);
+          }
+          if($rule['maxlength'] && $len > $rule['maxlength']) {
+            $err['rule'] = 'maxlength';
+            $err['value'] = $rule['maxlength'];
+            $this->error($err);
+          }
+          if($rule['length'] && $len != $rule['length']) {
+            $err['rule'] = 'length';
+            $err['value'] = $rule['length'];
+            $this->error($err);
+          }
         }
         if($rule['enum'] && !in_array($v, $rule['enum'])) {
           $err['rule'] = 'enum';
@@ -285,6 +315,7 @@ var_dump($o);
           $v = in_array($v, self::$bools) ? true : false;
         }
         //TODO: 日期验证
+        //TODO: 文件
         $data[$k] = $v;
         if($rule['methods']) {
           foreach($rule['methods'] as $f => $fn) {
@@ -295,6 +326,17 @@ var_dump($o);
               $this->error($err);
             }
           }
+        }
+        if(isset($rule['default']) && 'function' == $rule['default']['type']) {
+          $func = $rule['default']['value'];
+          if('toString' == $func) {
+            $data[$k] = json_encode($v);
+          }
+        }
+        if($rule['alias']) {
+          $alias = str_replace('%', $k, $rule['alias']);
+          $data[$alias] = $data[$k];
+          unset($data[$k]);
         }
       }
       return $data;

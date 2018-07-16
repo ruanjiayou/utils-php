@@ -1,5 +1,5 @@
 <?php
-  include('../validater.php');
+  include('../../utils/validater.php');
   $validation = new Validater(array(
       'member_id' => 'required|int',
       'member_name' => 'required|string'
