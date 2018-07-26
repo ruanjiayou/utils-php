@@ -3,13 +3,12 @@
 namespace think;
 
 class ModelBase extends Model {
-    public $page_info;
+    public $primaryKey = '';
 
     public function add($data) {
         $id = db($this->name)->insertGetId($data);
-        $idKey = $this->name . '_id';
         $condition = array();
-        $condition[$idKey] = $id;
+        $condition[$this->primaryKey] = $id;
         return $this->getInfo($condition);
     }
 
@@ -30,7 +29,7 @@ class ModelBase extends Model {
     public function getList($opts=array()) {
         $where = $opts['where'];
         $field = isset($opts['field']) ? $opts['field'] : '*';
-        $order = isset($opts['order']) ? $opts['order'] : '';
+        $order = isset($opts['order']) ? $opts['order'] : $this->primaryKey.' DESC';
         $limit = isset($where['limit']) ? $where['limit'] : 10;
         $page = isset($where['page']) ? $where['page'] : 1;
         unset($where['page']);
@@ -38,24 +37,8 @@ class ModelBase extends Model {
         if($limit === 0) {
             return db($this->name)->where($where)->field($field)->order($order)->select();
         } else {
-            $res = db($this->name)->where($where)->field($field)->order($order)->paginate($limit,false,['query'=>request()->param()]);
-            $this->page_info = $res;
-            return $res->items();
+            return db($this->name)->where($where)->field($field)->order($order)->paginate($limit,false,['page'=>$page]);
         }
-    }
-
-    public function paging() {
-        $pagination = array();
-        if($this->page_info){
-            $pagination = array(
-                'count' => $this->page_info->count(),
-                'limit' => intval($this->page_info->listRows()),
-                'total' => $this->page_info->total(),
-                'page'  => $this->page_info->currentPage(),
-                'pages' => $this->page_info->lastPage()
-            );
-        }
-        return $pagination;
     }
 }
 ?>

@@ -57,7 +57,7 @@ class CustomRoute {
         if(!isset($opt['recusive'])) {
             $opt['recusive'] = false;
         }
-        if(isset($opt['dir'])) {
+        if(isset($opt['dir']) && is_dir($opt['dir'])) {
             $dh = opendir($opt['dir']);
             while(($file=readdir($dh))!==false) {
                 if($file !='.'&&$file!='..') {
