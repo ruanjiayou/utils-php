@@ -40,6 +40,12 @@ getcwd();
  */
 paginate($limit, $simple, $config);
 
+// or/like查询
+$condition['goods_name|goods_serial'] = ['like', '%'.$_GET['search'].'%'];
+
+// 时间区间查询
+$hql['where']['dynamic_created_at']  = array('between', $timeArr);
+
 // thinkphp 5.0 关联查询 个屁 直接循环数组再查询
 
 // Request请求对象的常用操作
