@@ -88,11 +88,11 @@ class CustomRoute {
             // TODO: match group
             if('pattern' == $method) {
                 Route::pattern($route,$v);
-            } else if(in_array($route, ['post', 'delete', 'put', 'get'])) {
+            } else if(in_array($method, ['post', 'delete', 'put', 'get'])) {
                 Route::rule($route, $v, $method);
             }
         }
     }
 }
-CustomRoute::loadAll(['dir'=>__DIR__.'/api/routes']);
+CustomRoute::loadAll(['dir'=>__DIR__.'/routes']);
 ?>

@@ -25,6 +25,20 @@ getcwd();
 ```
 ##thinkphp 5.0 锦集
 ```php
+/**
+ * 1.下载thinkphp源码包,并解压到项目目录
+ * 2.下载phpStudy
+ *   其他选项菜单中,站点域名管理中添加 域名和端口,保存
+ *   其他选项菜单中,打开hosts 添加记录 127.0.0.1       banyou.jiayou.com
+ * 3.浏览器中输入 banyou.jiayou.com --> Hello World
+ * 4.git新建仓库
+ * 5.克隆仓库,并把刚解压的源码放进来
+ * 6.去掉对thinkphp和vendor的 ignore
+ * 7.测试动态路由 看云手册: 通常是在应用的路由配置文件application/route.php进行注册
+ * 8.错误: No input file specified --> public中的.htaccess RewriteRule ^(.*)$ index.php/$1 [QSA,PT,L]改为 RewriteRule ^(.*)$ index.php [L,E=PATH_INFO:$1]
+ * 9.application下新建routes文件夹,application下面的route.php内容改为本项目utils/Router.php中的内容
+ */
+
 // thinkphp 5.0 分页参数
 /**
  * @param $limit 每页数量
