@@ -36,9 +36,42 @@ getcwd();
  * 6.去掉对thinkphp和vendor的 ignore
  * 7.测试动态路由 看云手册: 通常是在应用的路由配置文件application/route.php进行注册
  * 8.错误: No input file specified --> public中的.htaccess RewriteRule ^(.*)$ index.php/$1 [QSA,PT,L]改为 RewriteRule ^(.*)$ index.php [L,E=PATH_INFO:$1]
- * 9.application下新建routes文件夹,application下面的route.php内容改为本项目utils/Router.php中的内容
- */
+ * 9.application下,复制utils文件夹,新建routes文件夹,application下面的route.php内容改为
+ * <?php
+ *   include __DIR__.'/utils/CustomRoute.php';
+ *   CustomRoute::loadAll(['dir'=>__DIR__.'/routes']);
+ * ?>
+ * 10.底层Response.php添加代码
+ * // Hook扩展方法
+ * protected static $hook = [];
+ * public function __call($method, $args)
+ * {
+ *     if (array_key_exists($method, self::$hook)) {
+ *         array_unshift($args, $this);
+ *         return call_user_func_array(self::$hook[$method], $args);
+ *     } else {
+ *         throw new Exception('method not exists:' . __CLASS__ . '->' . $method);
+ *     }
+ * }
+ * * /**
+ *  * Hook 方法注入
+ *  * @access public
+ *  * @param string|array  $method 方法名
+ *  * @param mixed         $callback callable
+ *  * @return void
+ *  * /
+ * public static function hook($method, $callback = null)
+ * {
+ *     if (is_array($method)) {
+ *         self::$hook = array_merge(self::$hook, $method);
+ *     } else {
+ *         self::$hook[$method] = $callback;
+ *     }
+ * }
 
+ */
+// TMD的Hook方法没有$this 只能注入参数
+// Route::rule的闭包中 设置res的header总是不成功 貌似return后new了个新的Response,折腾一天后用了return json($result).
 // thinkphp 5.0 分页参数
 /**
  * @param $limit 每页数量
@@ -406,5 +439,7 @@ foreach($arr as $item) {
 array_keys();
 //把数组中的每个值发送到用户自定义函数，返回新的值
 array_map();
+//区分数组还是对象
+gettype();//没用
 
 ```

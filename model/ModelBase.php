@@ -1,9 +1,9 @@
 <?php
-
-namespace think;
+namespace app\model;
+use think\Model;
 
 class ModelBase extends Model {
-    public $primaryKey = '';
+    public $primaryKey = 'id';
 
     public function add($data) {
         $id = db($this->name)->insertGetId($data);
@@ -41,4 +41,3 @@ class ModelBase extends Model {
         }
     }
 }
-?>
