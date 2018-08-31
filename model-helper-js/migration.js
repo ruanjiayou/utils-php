@@ -13,7 +13,7 @@ const alterDatabase = async () => {
     await models.sequelize.sync({ force: argv.force ? true : false });
     for (let k in models) {
       if (k !== 'Op' && k !== 'sequelize') {
-        await models[k].seed;
+        await models[k].seed();
       }
     }
     console.log('数据库表已修改成功!');

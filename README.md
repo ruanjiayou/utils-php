@@ -87,11 +87,24 @@ getcwd();
  */
 paginate($limit, $simple, $config);
 
+// in查询
+$condition = ['id'=> ['in', ['123','abc']]];
+
 // or/like查询
 $condition['goods_name|goods_serial'] = ['like', '%'.$_GET['search'].'%'];
+->whereOr($condition);
 
 // 时间区间查询
 $hql['where']['dynamic_created_at']  = array('between', $timeArr);
+
+// 大于: 时间用 > 数值用 EGT或>
+$hql = ['where'=>['workAt'=>['>',date('Y-m-d')]]];
+
+// 不为null
+$hql = ['where'=>['userId'=>['NEQ','NULL']]]
+
+// 获取参数中的数组
+input('post.images/a');
 
 // thinkphp 5.0 关联查询 个屁 直接循环数组再查询
 
@@ -441,5 +454,15 @@ array_keys();
 array_map();
 //区分数组还是对象
 gettype();//没用
-
+```
+##文件
+```php
+// http://www.w3school.com.cn/php/php_ref_filesystem.asp
+// post
+$_FILES['image'];
+// put
+get_file_content('php://input', 'r');
+// 原生处理上传文件
+$filepath = ROOT_PATH.'public/images/'.$_FILES["image"]["name"];
+move_uploaded_file($_FILES["image"]["tmp_name"], $filepath);
 ```
