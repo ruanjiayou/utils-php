@@ -107,6 +107,20 @@ $hql = ['where'=>['userId'=>['NEQ','NULL']]]
 input('post.images/a');
 
 // thinkphp 5.0 关联查询 个屁 直接循环数组再查询
+// admin.php model文件中定义关联 function AdminAuth(){ $this.belongsTo('admin','adminId');}
+// model('admin')查询时就有关联数据了
+
+// mysql5.6以上距离排序
+$data = model('user')->query('select *,(st_distance (point (x, y),point('.$_GET['distance'].')) / 0.0111) AS distance from user order by distance limit '.($hql['page']-1)*$hql['limit'].','.$hql['limit']);
+$res->return($data, [
+  'paginator' => [
+    'total' => $count,
+    'count' => count($data),
+    'page' => $hql['page'],
+    'limit'=> $hql['limit'],
+    'pages'=> ceil($count/$hql['limit'])
+  ]
+]);
 
 // Request请求对象的常用操作
 // 获取当前域名
