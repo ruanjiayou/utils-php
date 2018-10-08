@@ -20,7 +20,7 @@
     "autoload": {
         "psr-4": {
             "helpers\\": "utils/",
-            "helpers\\_": "utils/_",
+            "helpers\\_\\": "utils/_",
             "helpers\\Hinter\\": "utils/Hinter",
             "helpers\\Validater\\": "utils/Validater",
             "helpers\\CRouter\\": "utils/Router"
