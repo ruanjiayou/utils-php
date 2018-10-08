@@ -16,6 +16,7 @@
         "utils",
         "PHP"
     ],
+    "minimum-stability": "dev",
     "autoload": {
         "psr-4": {
             "helpers": "utils/",
