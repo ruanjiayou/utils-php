@@ -24,6 +24,5 @@
             "helpers\\Validater": "utils/Validater",
             "helpers\\CRouter": "utils/Router"
         }
-    },
-    "type": "utils"
+    }
 }
