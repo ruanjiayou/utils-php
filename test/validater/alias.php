@@ -1,5 +1,5 @@
 <?php
-  include('../../utils/validater.php');
+  include('../../utils/Validater.php');
   $validation = new Validater([
     'name'=>'required|array|alias:goods_%'
   ]);

@@ -1,4 +1,5 @@
 <?php
+namespace helpers;
   /**
    * php版参数校验类
    * 作者: 阮家友

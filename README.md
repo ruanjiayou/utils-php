@@ -94,7 +94,18 @@ $condition = ['id'=> ['in', ['123','abc']]];
 $condition['goods_name|goods_serial'] = ['like', '%'.$_GET['search'].'%'];
 ->whereOr($condition);
 
-// 时间区间查询
+// 时间差计算
+$startdate="2011-3-15 11:50:00";
+$enddate="2012-12-12 12:12:12";
+$date=floor((strtotime($enddate)-strtotime($startdate))/86400);
+echo "相差天数：".$date."天<br/><br/>";
+$hour=floor((strtotime($enddate)-strtotime($startdate))%86400/3600);
+echo "相差小时数：".$hour."小时<br/><br/>";
+$minute=floor((strtotime($enddate)-strtotime($startdate))%86400/60);
+echo "相差分钟数：".$minute."分钟<br/><br/>"; 
+$second=floor((strtotime($enddate)-strtotime($startdate))%86400%60);
+
+// 时间区间查询 时间戳转日期 date('Y-m-d H:i:s', t) 日期转时间戳 strotime
 $hql['where']['dynamic_created_at']  = array('between', $timeArr);
 
 // 大于: 时间用 > 数值用 EGT或>
@@ -103,12 +114,33 @@ $hql = ['where'=>['workAt'=>['>',date('Y-m-d')]]];
 // 不为null
 $hql = ['where'=>['userId'=>['NEQ','NULL']]]
 
+// 混合查询
+$complex = [['like', $query['year'].'-'.$query['month'].'-'.'%'],['>=',date('Y-m-d').' 00:00:00']];
+
 // 获取参数中的数组
 input('post.images/a');
+
+// 复杂的AND OR查询
+$h['where'] = "isDeleted = 0 AND isRead = ".$isRead." AND (type='system' OR phone= '".$phone."')";
+
+// 日志,必须最后一个是Log::write()
+use think\Log;Log::recorder($);
+
+// 文件
+$fh = fopen(ROOT_PATH.'test-log.txt', 'a+');
+fwrite($fh, json_encode($goods_info));
+fclose($fh);
+
+// 时间比较
+time() < strtotime($lastInvitation['confirmedAt']) + 7200
 
 // thinkphp 5.0 关联查询 个屁 直接循环数组再查询
 // admin.php model文件中定义关联 function AdminAuth(){ $this.belongsTo('admin','adminId');}
 // model('admin')查询时就有关联数据了
+
+// 分组统计
+'select sellerPhone,sellerName,count(id) from invitation where progress="canceling" group by sellerPhone';
+model('invitation')->where(['canceledAt'=>['between',[$query['date'].' 00:00:00',$query['date'].' 23:59:59']]])->field('sellerPhone,sellerName,count(id) as times')->group('sellerPhone')->select();
 
 // mysql5.6以上距离排序
 $data = model('user')->query('select *,(st_distance (point (x, y),point('.$_GET['distance'].')) / 0.0111) AS distance from user order by distance limit '.($hql['page']-1)*$hql['limit'].','.$hql['limit']);

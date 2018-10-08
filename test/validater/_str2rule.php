@@ -1,5 +1,5 @@
 <?php
-  include('../../utils/validater.php');
+  include('../../utils/Validater.php');
   try {
     $validation = new Validater(array());
     $rule2 = $validation->_str2rule('enum:pending, success, fail');

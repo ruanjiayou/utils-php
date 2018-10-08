@@ -1,61 +1,63 @@
 <?php
-use think\Route;
-use think\Request;
-use think\Response;
+namespace helpers;
+// tp添加请求和响应的hook
+/*
+  use think\Route;
+  use think\Request;
+  use think\Response;
+  Request::hook('paging', function(Request $req, $cb = null){
+    $query = $req->get();
+    $condition = [];
+    if(isset($query['page']) && is_numeric($query['page'])) {
+      $condition['page'] = intval($query['page']);
+    }
+    if(isset($query['limit']) && is_numeric($query['limit'])) {
+      $condition['limit'] = intval($query['limit']);
+    }
+    if(!empty($query['order'])) {
+      $condition['order'] = str_replace('-', ' ', $query['order']);
+    }
+    if(!empty($query['search'])) {
+      $condition['search'] = $query['search'];
+    }
+    if(!empty($cb)) {
+      $condition = $cb($condition, $query);
+    }
+    return $condition;
+  });
 
-Request::hook('paging', function(Request $req, $cb = null){
-  $query = $req->get();
-  $condition = [];
-  if(isset($query['page']) && is_numeric($query['page'])) {
-    $condition['page'] = intval($query['page']);
-  }
-  if(isset($query['limit']) && is_numeric($query['limit'])) {
-    $condition['limit'] = intval($query['limit']);
-  }
-  if(!empty($query['order'])) {
-    $condition['order'] = str_replace('-', ' ', $query['order']);
-  }
-  if(!empty($query['search'])) {
-    $condition['search'] = $query['search'];
-  }
-  if(!empty($cb)) {
-    $condition = $cb($condition, $query);
-  }
-  return $condition;
-});
+  Response::hook('return', function(Response $res, $result) {
+    $res->data(['status'=> empty($result) ?'success':'fail','data'=>$result]);
+  });
 
-Response::hook('return', function(Response $res, $result) {
-  $res->data(['status'=> empty($result) ?'success':'fail','data'=>$result]);
-});
+  Response::hook('success', function(Response $res){
+    $res->data(['status'=>'success']);
+  });
 
-Response::hook('success', function(Response $res){
-  $res->data(['status'=>'success']);
-});
+  Response::hook('fail', function(Response $res){
+    $res->data(['status'=>'fail']);
+  });
 
-Response::hook('fail', function(Response $res){
-  $res->data(['status'=>'fail']);
-});
-
-Response::hook('paging', function(Response $res, $result) {
-  $content = [
-    'status' => 'success',
-    'result' => [],
-  ];
-  if($result!==null && isset($result['listRows'])) {
-    $content['result'] = $result->listRows();
-    $content['pagination'] = [
-        'page'=>$result->currentPage(),
-        'pages'=>$result->lastPage(),
-        'limit'=>$result->listRows(),
-        'count'=>$result->count(),
-        'total'=>$result->total(),
-      ];
-  } else {
-    $content['result'] = $result;
-  }
-  $res->data($content);
-});
-
+  Response::hook('paging', function(Response $res, $result) {
+    $content = [
+      'status' => 'success',
+      'result' => [],
+    ];
+    if($result!==null && isset($result['listRows'])) {
+      $content['result'] = $result->listRows();
+      $content['pagination'] = [
+          'page'=>$result->currentPage(),
+          'pages'=>$result->lastPage(),
+          'limit'=>$result->listRows(),
+          'count'=>$result->count(),
+          'total'=>$result->total(),
+        ];
+    } else {
+      $content['result'] = $result;
+    }
+    $res->data($content);
+  });
+*/
 class CustomRoute {
   static $routes = [];
   static function scanner($opt = array()) {
@@ -85,28 +87,36 @@ class CustomRoute {
     }
   }
 
-  static function loadAll($opt) {
+  static function loadAll($opt, $cb) {
     self::scanner($opt);
     foreach(self::$routes as $k => $v) {
       $info = explode(' ', $k);
       $method = strtolower($info[0]);
       $route = $info[1];
-      // TODO: match group
-      if('pattern' == $method) {
-        Route::pattern($route,$v);
-      } else if(in_array($method, ['post', 'delete', 'put', 'get'])) {
-        Route::rule($route, function(Request $req, Response $res) use($v){
-          $result = $v($req, $res);
-          if(empty($result)) {
-            $result = $res->getData();
-          }
-          if(is_string($result)) {
-            return $result;
-          } else {
-            return json($result);
-          }
-        }, $method);
+      if(is_callable($cb)) {
+        /**
+         * @param $method 路由类型,get/post/put/delete/use/pattern
+         * @param $route 路径
+         * @param $v 回调或use的正则
+         */
+        $cb($method, $route, $v);
       }
+      // TODO: match group
+      // if('pattern' == $method) {
+      //   Route::pattern($route,$v);
+      // } else if(in_array($method, ['post', 'delete', 'put', 'get'])) {
+      //   Route::rule($route, function(Request $req, Response $res) use($v){
+      //     $result = $v($req, $res);
+      //     if(empty($result)) {
+      //       $result = $res->getData();
+      //     }
+      //     if(is_string($result)) {
+      //       return $result;
+      //     } else {
+      //       return json($result);
+      //     }
+      //   }, $method);
+      // }
     }
   }
 }
